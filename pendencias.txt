@@ -1,0 +1,2 @@
+- update user admin por campo e não atualizar tudo
+- melhorar o tratamento de erro
