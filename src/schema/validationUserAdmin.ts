@@ -38,7 +38,7 @@ export const schemaAddUserAdmin = z.object({
       if (regexNumber) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: 'A senha precisa ter um número',
+          message: 'A senha precisa ter um número ' + val,
           fatal: true
         });
       }
@@ -59,14 +59,14 @@ export const schemaAddUserAdmin = z.object({
       if (regexLowerCase) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: 'A senha precisa ter uma letra maiúscula',
+          message: 'A senha precisa ter uma letra minúscula',
           fatal: true
         });
       }
       if (regexUpperCase) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: 'A senha precisa ter uma letra minúscula',
+          message: 'A senha precisa ter uma letra maiúscula',
           fatal: true
         });
       }
@@ -107,67 +107,59 @@ export const schemaAlterPassword = z.object({
       if (regexLowerCase) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: 'A senha precisa ter uma letra maiúscula',
+          message: 'A senha precisa ter uma letra minúscula',
           fatal: true
         });
       }
       if (regexUpperCase) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: 'A senha precisa ter uma letra minúscula',
+          message: 'A senha precisa ter uma letra maiúscula',
           fatal: true
         });
       }
     })
 });
 
-export const schemaUserAdminProfile = z.object({
+export const schemaUserAdminUsername = z.object({
   username: z
-    .union([
-      z
-        .string()
-        .refine(
-          (val) => !/[^.-\w]/g.test(val),
-          'Nome de login não pode ter caracteres especiais'
-        ),
-      z.string().min(4),
-      z.string().length(0)
-    ])
-    .optional()
-    .transform((e) => (e === '' ? undefined : e)),
-  name: z
-    .union([
-      z.string().superRefine((val, ctx) => {
-        if (validateName(val.trim())) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: 'Coloque o seu nome completo!',
-            fatal: true
-          });
-        }
-        if (validateIfNameHasNumber(val)) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: 'Nome não pode ter símbolos ou números',
-            fatal: true
-          });
-        }
-      }),
-      z.string().min(4),
-      z.string().length(0)
-    ])
-    .optional()
-    .transform((e) => (e === '' ? undefined : e)),
-  email: z
-    .union([
-      z.string().email('Insira um e-mail válido'),
-      z.string().min(4),
-      z.string().length(0)
-    ])
-    .optional()
-    .transform((e) => (e === '' ? undefined : e))
+    .string()
+    .refine(
+      (val) => !/[^.-\w]/g.test(val),
+      'Nome de login não pode ter caracteres especiais'
+    )
+});
+
+export const schemaUserAdminName = z.object({
+  name: z.string().superRefine((val, ctx) => {
+    if (validateName(val.trim())) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Coloque o seu nome completo!',
+        fatal: true
+      });
+    }
+    if (validateIfNameHasNumber(val)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Nome não pode ter símbolos ou números',
+        fatal: true
+      });
+    }
+  })
+});
+
+export const schemaUserAdminEmail = z.object({
+  email: z.string().email('Insira um e-mail válido')
+});
+
+export const schemaUserAdminRole = z.object({
+  role: z.string()
 });
 
 export type FormAddUserAdmin = z.infer<typeof schemaAddUserAdmin>;
-export type FormUserAdminProfile = z.infer<typeof schemaUserAdminProfile>;
+export type FormUserAdminUsername = z.infer<typeof schemaUserAdminUsername>;
+export type FormUserAdminName = z.infer<typeof schemaUserAdminName>;
+export type FormUserAdminEmail = z.infer<typeof schemaUserAdminEmail>;
+export type FormUserAdminRole = z.infer<typeof schemaUserAdminRole>;
 export type FormAlterPassword = z.infer<typeof schemaAlterPassword>;

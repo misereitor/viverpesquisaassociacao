@@ -40,10 +40,7 @@ class LoginAdminServices implements ILoginAdminServices {
       );
       return token;
     } catch (error) {
-      if (error instanceof HttpError) {
-        throw new HttpError(404, 'Login ou senha inválidos');
-      }
-      throw new HttpError(500, String(error));
+      throw new HttpError(404, String(error));
     }
   }
 }

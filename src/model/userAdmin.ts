@@ -1,6 +1,4 @@
-import { RowDataPacket } from 'mysql2';
-
-export default interface UserAdmin extends RowDataPacket {
+export default interface UserAdmin {
   id: number;
   name: string;
   username: string;
@@ -20,14 +18,6 @@ export interface UserAdminResponse {
 export interface AlterPasswordRequest {
   id: number;
   password: string;
-}
-
-export interface IdUserAdminRequest {
-  id: number;
-}
-
-export interface UserNameAdminRequest {
-  username: string;
 }
 
 export interface LoginAdmin {

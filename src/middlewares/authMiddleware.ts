@@ -13,12 +13,16 @@ interface Decoded {
 const adminRoutes = [
   '/useradmin/searchall',
   '/useradmin/createuseradmin',
-  '/useradmin/searchbyid',
-  '/useradmin/searchbyusername',
+  '/useradmin/searchbyid/:id',
+  '/useradmin/searchbyusername/:username',
   '/useradmin/update',
   '/useradmin/alterpassword',
-  '/useradmin/delete'
+  '/useradmin/delete/:id'
 ];
+
+const adminRoutesRegex = adminRoutes.map(
+  (route) => new RegExp(`^${route.replace(/:[^\s/]+/g, '([^/]+)')}$`)
+);
 
 const authMiddlewareUserAdmin = (
   req: Request,
@@ -27,20 +31,26 @@ const authMiddlewareUserAdmin = (
 ) => {
   const pathname = req.originalUrl;
   const token = req.headers['authorization'];
+
   if (!token) {
     return res.status(401).json({ message: 'Unauthorized' });
   }
+
   verify(token, secretKey, (err, decoded) => {
     if (err) {
       return res.status(401).json({ message: 'Unauthorized' });
     }
+
     const decodedTransform = decoded as Decoded;
     if (decodedTransform.roles != 'admin') {
       return res.status(401).json({ message: 'Unauthorized' });
     }
-    if (!adminRoutes.includes(pathname)) {
+
+    const isAdminRoute = adminRoutesRegex.some((regex) => regex.test(pathname));
+    if (!isAdminRoute) {
       return res.status(401).json({ message: 'Unauthorized' });
     }
+
     next();
   });
 };

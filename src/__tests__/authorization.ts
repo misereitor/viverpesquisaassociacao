@@ -1,0 +1,4 @@
+const authorization =
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJtaXNhZWwuYmF0aXN0YSIsInJvbGVzIjoiYWRtaW4iLCJpYXQiOjE3MTg5OTMzMjEsImV4cCI6MTcyMTU4NTMyMX0.P1MzX6-LMFw7qGLfk-Drnx0-stLYEGn9LKXuXdCGpp8';
+
+export default authorization;

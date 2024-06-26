@@ -7,9 +7,12 @@ import userAdminRepository from '../repositiry/userAdminRepository';
 import {
   schemaAddUserAdmin,
   schemaAlterPassword,
-  schemaUserAdminProfile
+  schemaUserAdminUsername,
+  schemaUserAdminName,
+  schemaUserAdminEmail,
+  schemaUserAdminRole
 } from '../schema/validationUserAdmin';
-import { ZodError } from 'zod';
+import { ZodError, ZodIssue } from 'zod';
 import { HttpError } from '../errorHandling/custonError';
 
 interface IUserAdminService {
@@ -20,6 +23,15 @@ interface IUserAdminService {
   update(userAdmin: UserAdmin): Promise<UserAdminResponse>;
   alterPassword(alterPassword: AlterPasswordRequest): Promise<void>;
   delete(idUserAdmin: number): Promise<void>;
+}
+
+interface ValidUserUpdate {
+  success: boolean;
+  error: ErrorsValidateUserUpdate[];
+}
+
+interface ErrorsValidateUserUpdate {
+  errors: ZodIssue[];
 }
 
 class UserAdminService implements IUserAdminService {
@@ -97,9 +109,13 @@ class UserAdminService implements IUserAdminService {
     try {
       await this.searchById(userAdmin.id);
 
-      const validateResult = schemaUserAdminProfile.safeParse(userAdmin);
+      const validateResult = this.validateAlterUserAdmin(userAdmin);
       if (!validateResult.success) {
-        throw new ZodError(validateResult.error.errors);
+        const zodIssues: ZodIssue[] = [];
+        validateResult.error.forEach((errorItem) => {
+          zodIssues.push(...errorItem.errors);
+        });
+        throw new ZodError(zodIssues);
       }
       const update = await userAdminRepository.update(userAdmin);
       return this.converterUserAdminForResponse(update);
@@ -139,6 +155,7 @@ class UserAdminService implements IUserAdminService {
     const hashPassword = await bcrypt.hash(password, 10);
     return hashPassword;
   }
+
   private converterUserAdminForResponse(
     userAdmin: UserAdmin
   ): UserAdminResponse {
@@ -167,6 +184,38 @@ class UserAdminService implements IUserAdminService {
       }
     );
     return userAdminResponse;
+  }
+
+  private validateAlterUserAdmin(userAdmin: UserAdmin): ValidUserUpdate {
+    const validationResult: ValidUserUpdate = {
+      success: true,
+      error: []
+    };
+    if (userAdmin.name) {
+      const valiudUser = schemaUserAdminName.safeParse(userAdmin);
+      if (!valiudUser.success)
+        validationResult.error.push({ errors: valiudUser.error.errors });
+    }
+    if (userAdmin.username) {
+      const valiudUser = schemaUserAdminUsername.safeParse(userAdmin);
+      if (!valiudUser.success)
+        validationResult.error.push({ errors: valiudUser.error.errors });
+    }
+    if (userAdmin.email) {
+      const valiudUser = schemaUserAdminEmail.safeParse(userAdmin);
+      if (!valiudUser.success)
+        validationResult.error.push({ errors: valiudUser.error.errors });
+    }
+    if (userAdmin.role) {
+      const valiudUser = schemaUserAdminRole.safeParse(userAdmin);
+      if (!valiudUser.success)
+        validationResult.error.push({ errors: valiudUser.error.errors });
+    }
+
+    if (validationResult.error.length !== 0) {
+      validationResult.success = false;
+    }
+    return validationResult;
   }
 }
 
