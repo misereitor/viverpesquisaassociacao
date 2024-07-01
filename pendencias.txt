@@ -1,2 +1,9 @@
 - update user admin por campo e não atualizar tudo
 - melhorar o tratamento de erro
+- melhorar os nomes das rotas
+
+
+
+
+- implementar rotas de search logs
+- implementar criação dos logs nos services.

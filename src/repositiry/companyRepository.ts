@@ -1,37 +1,30 @@
+import Company from '../model/company';
 import { ResultSetHeader, RowDataPacket } from 'mysql2';
-import { createConnection } from '../config/db.config';
-import UserAdmin, { AlterPasswordRequest } from '../model/userAdmin';
 import { HttpError } from '../errorHandling/custonError';
+import { createConnection } from '../config/db.config';
 import { buildUpdateQuery } from '../utils/queryBuilder';
 import { ChangeStatus } from '../model/changeStatus';
 
-interface IUserAdminRepository {
-  save(userAdmin: UserAdmin): Promise<number>;
-  searchAll(): Promise<UserAdmin[]>;
-  searchById(idUserAdmin: number): Promise<UserAdmin>;
-  searchByUserName(username: string): Promise<UserAdmin>;
-  update(userAdmin: UserAdmin): Promise<UserAdmin>;
-  alterPassword(alterPassword: AlterPasswordRequest): Promise<void>;
+interface ICompanyRepository {
+  save(company: Company): Promise<number>;
+  searchAll(): Promise<Company[]>;
+  searchById(idCompany: number): Promise<Company>;
+  searchByName(name: string): Promise<Company>;
+  update(company: Company): Promise<Company>;
   changeStatus(status: ChangeStatus): Promise<void>;
 }
 
-class UserAdminRepository implements IUserAdminRepository {
-  public async save(userAdmin: UserAdmin): Promise<number> {
+class CompanyRepository implements ICompanyRepository {
+  public async save(company: Company): Promise<number> {
     const connection = await createConnection();
     try {
       const [rows] = await connection.execute<ResultSetHeader>(
         `INSERT INTO 
-          user_admin 
-        (name, username, password, email, role) 
+          company 
+        (name, associate) 
           VALUES 
-        (?, ?, ?, ?, ?)`,
-        [
-          userAdmin.name,
-          userAdmin.username,
-          userAdmin.password,
-          userAdmin.email,
-          userAdmin.role
-        ]
+        (?, ?)`,
+        [company.name, company.associate]
       );
       return rows.insertId;
     } catch (error) {
@@ -42,13 +35,13 @@ class UserAdminRepository implements IUserAdminRepository {
     }
   }
 
-  public async searchAll(): Promise<UserAdmin[]> {
+  public async searchAll(): Promise<Company[]> {
     const connection = await createConnection();
     try {
       const [rows] = await connection.execute<RowDataPacket[]>(
-        'SELECT * FROM user_admin'
+        `SELECT * FROM company WHERE active = true`
       );
-      return rows as UserAdmin[];
+      return rows as Company[];
     } catch (error) {
       console.error('Failed to fetch data:', error);
       throw new HttpError(500, String(error));
@@ -57,14 +50,14 @@ class UserAdminRepository implements IUserAdminRepository {
     }
   }
 
-  public async searchById(idUserAdmin: number): Promise<UserAdmin> {
+  public async searchById(idCompany: number): Promise<Company> {
     const connection = await createConnection();
     try {
       const [rows] = await connection.execute<RowDataPacket[]>(
-        'SELECT * FROM user_admin WHERE id = (?)',
-        [idUserAdmin]
+        `SELECT * FROM company WHERE id = (?) AND active = true`,
+        [idCompany]
       );
-      return rows[0] as UserAdmin;
+      return rows[0] as Company;
     } catch (error) {
       console.error('Failed to fetch data:', error);
       throw new HttpError(500, String(error));
@@ -73,14 +66,14 @@ class UserAdminRepository implements IUserAdminRepository {
     }
   }
 
-  public async searchByUserName(username: string): Promise<UserAdmin> {
+  public async searchByName(name: string): Promise<Company> {
     const connection = await createConnection();
     try {
       const [rows] = await connection.execute<RowDataPacket[]>(
-        'SELECT * FROM user_admin WHERE username LIKE (?)',
-        [username]
+        `SELECT * FROM company WHERE name like (?)`,
+        [name]
       );
-      return rows[0] as UserAdmin;
+      return rows[0] as Company;
     } catch (error) {
       console.error('Failed to fetch data:', error);
       throw new HttpError(500, String(error));
@@ -89,40 +82,24 @@ class UserAdminRepository implements IUserAdminRepository {
     }
   }
 
-  public async update(userAdmin: UserAdmin): Promise<UserAdmin> {
+  public async update(company: Company): Promise<Company> {
     const connection = await createConnection();
     try {
       const { query, values } = buildUpdateQuery(
-        'user_admin',
-        userAdmin,
-        userAdmin.id
+        'company',
+        company,
+        company.id
       );
       const [result] = await connection.execute<ResultSetHeader>(query, values);
       if (result.affectedRows === 0) {
         throw new Error('No rows updated');
       }
-      const [rows] = await connection.execute<RowDataPacket[]>(
-        'SELECT * FROM user_admin WHERE id = ?',
-        [userAdmin.id]
-      );
-      return rows[0] as UserAdmin;
-    } catch (error) {
-      console.error('Failed to fetch data:', error);
-      throw new HttpError(500, String(error));
-    } finally {
-      await connection.end();
-    }
-  }
 
-  public async alterPassword(
-    alterPassword: AlterPasswordRequest
-  ): Promise<void> {
-    const connection = await createConnection();
-    try {
-      await connection.execute(
-        `UPDATE user_admin SET password = ? WHERE id = ?`,
-        [alterPassword.password, alterPassword.id]
+      const [rows] = await connection.execute<RowDataPacket[]>(
+        `SELECT * FROM company WHERE id = (?)`,
+        [company.id]
       );
+      return rows[0] as Company;
     } catch (error) {
       console.error('Failed to fetch data:', error);
       throw new HttpError(500, String(error));
@@ -134,7 +111,7 @@ class UserAdminRepository implements IUserAdminRepository {
   public async changeStatus(status: ChangeStatus): Promise<void> {
     const connection = await createConnection();
     try {
-      await connection.execute('UPDATE user_admin SET active ? WHERE id = ?', [
+      await connection.execute(`UPDATE company SET active ? WHERE id = ?`, [
         status.active,
         status.id
       ]);
@@ -147,4 +124,4 @@ class UserAdminRepository implements IUserAdminRepository {
   }
 }
 
-export default new UserAdminRepository();
+export default new CompanyRepository();

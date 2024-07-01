@@ -21,7 +21,8 @@ describe('userAdminServices', () => {
         username: 'misael.miranda',
         password: 'Misael@123',
         email: 'teste@vivertecnologia.com.br',
-        role: 'admin'
+        role: 'admin',
+        active: true
       };
 
       (userAdminRepository.searchByUserName as jest.Mock).mockResolvedValue(
@@ -43,7 +44,8 @@ describe('userAdminServices', () => {
         username: 'misael.miranda',
         password: 'Misael@1023',
         email: 'teste@vivertecnologia.com.br',
-        role: 'admin'
+        role: 'admin',
+        active: true
       };
 
       const mockUserAdminResponse: UserAdminResponse = {
@@ -51,7 +53,8 @@ describe('userAdminServices', () => {
         name: 'Misael Miranda',
         username: 'misael.miranda',
         email: 'teste@vivertecnologia.com.br',
-        role: 'admin'
+        role: 'admin',
+        active: true
       };
 
       (userAdminRepository.searchByUserName as jest.Mock).mockResolvedValue(
@@ -83,7 +86,8 @@ describe('userAdminServices', () => {
         name: 'New User',
         email: 'invalidemail', // Email inválido
         role: 'admin',
-        password: 'Password@123'
+        password: 'Password@123',
+        active: true
       };
 
       await expect(

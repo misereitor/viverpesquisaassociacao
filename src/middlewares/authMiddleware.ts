@@ -11,13 +11,25 @@ interface Decoded {
 }
 
 const adminRoutes = [
-  '/useradmin/searchall',
   '/useradmin/createuseradmin',
+  '/useradmin/searchall',
   '/useradmin/searchbyid/:id',
   '/useradmin/searchbyusername/:username',
   '/useradmin/update',
   '/useradmin/alterpassword',
-  '/useradmin/delete/:id'
+  '/useradmin/delete/:id',
+  '/category/create',
+  '/category/searchall',
+  '/category/searchbyid/:id',
+  '/category/searchbyname/:name',
+  '/category/update',
+  '/category/delete/:id',
+  '/company/create',
+  '/company/searchall',
+  '/company/searchbyid/:id',
+  '/company/searchbyname/:name',
+  '/company/update',
+  '/company/delete/:id'
 ];
 
 const adminRoutesRegex = adminRoutes.map(

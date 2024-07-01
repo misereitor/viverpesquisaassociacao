@@ -93,12 +93,14 @@ routerAdmin.put(
 );
 
 routerAdmin.delete(
-  '/delete/:id',
+  '/changestatus/:id',
   authMiddlewareUserAdmin,
   async (req: Request, res: Response): Promise<void> => {
     try {
       const idUserAdmin = req.params;
-      const usersAdmin = await UserAdminService.delete(Number(idUserAdmin.id));
+      const usersAdmin = await UserAdminService.changeStatus(
+        Number(idUserAdmin.id)
+      );
       res.status(200).send(usersAdmin);
     } catch (error) {
       res.status(400).json({ message: (error as Error).message });

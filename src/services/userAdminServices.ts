@@ -14,6 +14,7 @@ import {
 } from '../schema/validationUserAdmin';
 import { ZodError, ZodIssue } from 'zod';
 import { HttpError } from '../errorHandling/custonError';
+import { ChangeStatus } from '../model/changeStatus';
 
 interface IUserAdminService {
   createUserAdmin(userAdmin: UserAdmin): Promise<UserAdminResponse>;
@@ -22,7 +23,7 @@ interface IUserAdminService {
   searchByUserName(userName: string): Promise<UserAdminResponse>;
   update(userAdmin: UserAdmin): Promise<UserAdminResponse>;
   alterPassword(alterPassword: AlterPasswordRequest): Promise<void>;
-  delete(idUserAdmin: number): Promise<void>;
+  changeStatus(idUserAdmin: number): Promise<void>;
 }
 
 interface ValidUserUpdate {
@@ -68,9 +69,6 @@ class UserAdminService implements IUserAdminService {
   public async searchAll(): Promise<UserAdminResponse[]> {
     try {
       const searchUserAdmin = await userAdminRepository.searchAll();
-      if (!searchUserAdmin) {
-        throw new HttpError(404, 'Usuário não encontrado');
-      }
       return this.converterAllUserAdminForResponse(searchUserAdmin);
     } catch (error) {
       throw new HttpError(403, `${error}`);
@@ -142,10 +140,14 @@ class UserAdminService implements IUserAdminService {
     }
   }
 
-  public async delete(idUserAdmin: number): Promise<void> {
+  public async changeStatus(idUserAdmin: number): Promise<void> {
     try {
-      await this.searchById(idUserAdmin);
-      await userAdminRepository.delete(idUserAdmin);
+      const userAdmin = await this.searchById(idUserAdmin);
+      const changeStatusUserAdmin: ChangeStatus = {
+        id: idUserAdmin,
+        active: !userAdmin.active
+      };
+      await userAdminRepository.changeStatus(changeStatusUserAdmin);
     } catch (error) {
       throw new HttpError(403, `${error}`);
     }
@@ -164,7 +166,8 @@ class UserAdminService implements IUserAdminService {
       username: userAdmin.username,
       name: userAdmin.name,
       email: userAdmin.email,
-      role: userAdmin.role
+      role: userAdmin.role,
+      active: userAdmin.active
     };
     return userAdminResponse;
   }
@@ -179,7 +182,8 @@ class UserAdminService implements IUserAdminService {
           username: user.username,
           name: user.name,
           email: user.email,
-          role: user.role
+          role: user.role,
+          active: user.active
         };
       }
     );

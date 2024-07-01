@@ -5,6 +5,7 @@ export default interface UserAdmin {
   password: string;
   email: string;
   role: string;
+  active: boolean;
 }
 
 export interface UserAdminResponse {
@@ -13,6 +14,7 @@ export interface UserAdminResponse {
   username: string;
   email: string;
   role: string;
+  active: boolean;
 }
 
 export interface AlterPasswordRequest {
