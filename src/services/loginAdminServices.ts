@@ -27,6 +27,10 @@ class LoginAdminServices implements ILoginAdminServices {
       const isMatch = await bcript.compare(login.password, userAdmin.password);
       if (!isMatch) throw new HttpError(404, 'Login ou senha inválidos');
 
+      const date = new Date();
+      userAdmin.last_login = date;
+      await userAdminRepository.update(userAdmin);
+
       const token = sign(
         {
           id: userAdmin.id,
@@ -40,7 +44,11 @@ class LoginAdminServices implements ILoginAdminServices {
       );
       return token;
     } catch (error) {
-      throw new HttpError(404, String(error));
+      if (error instanceof HttpError) {
+        throw error;
+      } else {
+        throw new HttpError(500, (error as Error).message);
+      }
     }
   }
 }

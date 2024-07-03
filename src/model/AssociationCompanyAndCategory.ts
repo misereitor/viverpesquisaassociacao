@@ -8,6 +8,7 @@ export default interface AssCompanyAndCategory {
 }
 
 export interface AssCompanyAndCategoryInDB {
+  id: number;
   category_id: number;
   category_name: string;
   company_name: string;
@@ -17,6 +18,7 @@ export interface AssCompanyAndCategoryInDB {
 }
 
 export interface ResponseAssCompanyAndCategory {
+  id: number;
   category: Category;
   companyAssociate: Company[];
 }

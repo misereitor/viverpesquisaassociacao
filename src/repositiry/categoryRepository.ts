@@ -10,7 +10,7 @@ interface ICategoryRepository {
   searchById(idCategory: number): Promise<Category>;
   searchByName(name: string): Promise<Category>;
   update(category: Category): Promise<Category>;
-  changeStatus(status: ChangeStatus): Promise<void>;
+  changeStatus(status: ChangeStatus): Promise<Category>;
 }
 
 class CategoryRepository implements ICategoryRepository {
@@ -105,13 +105,22 @@ class CategoryRepository implements ICategoryRepository {
     }
   }
 
-  public async changeStatus(status: ChangeStatus): Promise<void> {
+  public async changeStatus(status: ChangeStatus): Promise<Category> {
     const connection = await createConnection();
     try {
-      await connection.execute(`UPDATE category SET active ? WHERE id = ?`, [
-        status.active,
-        status.id
-      ]);
+      const [result] = await connection.execute<ResultSetHeader>(
+        `UPDATE category SET active ? WHERE id = ?`,
+        [status.active, status.id]
+      );
+      if (result.affectedRows === 0) {
+        throw new Error('No rows updated');
+      }
+
+      const [rows] = await connection.execute<RowDataPacket[]>(
+        `SELECT * FROM category WHERE id = (?)`,
+        [status.id]
+      );
+      return rows[0] as Category;
     } catch (error) {
       console.error('Failed to fetch data:', error);
       throw new HttpError(500, String(error));

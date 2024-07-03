@@ -11,8 +11,8 @@ interface IUserAdminRepository {
   searchById(idUserAdmin: number): Promise<UserAdmin>;
   searchByUserName(username: string): Promise<UserAdmin>;
   update(userAdmin: UserAdmin): Promise<UserAdmin>;
-  alterPassword(alterPassword: AlterPasswordRequest): Promise<void>;
-  changeStatus(status: ChangeStatus): Promise<void>;
+  alterPassword(alterPassword: AlterPasswordRequest): Promise<UserAdmin>;
+  changeStatus(status: ChangeStatus): Promise<UserAdmin>;
 }
 
 class UserAdminRepository implements IUserAdminRepository {
@@ -116,13 +116,21 @@ class UserAdminRepository implements IUserAdminRepository {
 
   public async alterPassword(
     alterPassword: AlterPasswordRequest
-  ): Promise<void> {
+  ): Promise<UserAdmin> {
     const connection = await createConnection();
     try {
-      await connection.execute(
+      const [result] = await connection.execute<ResultSetHeader>(
         `UPDATE user_admin SET password = ? WHERE id = ?`,
         [alterPassword.password, alterPassword.id]
       );
+      if (result.affectedRows === 0) {
+        throw new Error('No rows updated');
+      }
+      const [rows] = await connection.execute<RowDataPacket[]>(
+        'SELECT * FROM user_admin WHERE id = ?',
+        [alterPassword.id]
+      );
+      return rows[0] as UserAdmin;
     } catch (error) {
       console.error('Failed to fetch data:', error);
       throw new HttpError(500, String(error));
@@ -131,13 +139,21 @@ class UserAdminRepository implements IUserAdminRepository {
     }
   }
 
-  public async changeStatus(status: ChangeStatus): Promise<void> {
+  public async changeStatus(status: ChangeStatus): Promise<UserAdmin> {
     const connection = await createConnection();
     try {
-      await connection.execute('UPDATE user_admin SET active ? WHERE id = ?', [
-        status.active,
-        status.id
-      ]);
+      const [result] = await connection.execute<ResultSetHeader>(
+        'UPDATE user_admin SET active ? WHERE id = ?',
+        [status.active, status.id]
+      );
+      if (result.affectedRows === 0) {
+        throw new Error('No rows updated');
+      }
+      const [rows] = await connection.execute<RowDataPacket[]>(
+        'SELECT * FROM user_admin WHERE id = ?',
+        [status.id]
+      );
+      return rows[0] as UserAdmin;
     } catch (error) {
       console.error('Failed to fetch data:', error);
       throw new HttpError(500, String(error));

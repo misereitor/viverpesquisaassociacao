@@ -4,6 +4,7 @@ import cors, { CorsOptions } from 'cors';
 import { routerAuthAdmin } from './router/authAdmin.router';
 import { routerCategory } from './router/category.router';
 import { routerCompany } from './router/company.router';
+import { routerAssCategoryCompany } from './router/associationCompanyAndCategory.router';
 
 const app: Application = express();
 
@@ -18,5 +19,6 @@ app.use('/useradmin', routerAdmin);
 app.use('/loginadmin', routerAuthAdmin);
 app.use('/category', routerCategory);
 app.use('/company', routerCompany);
+app.use('/associate', routerAssCategoryCompany);
 
 export default app;

@@ -2,6 +2,7 @@ import { Request, Response, Router } from 'express';
 import authMiddlewareUserAdmin from '../middlewares/authMiddleware';
 import CompanyServices from '../services/companyServices';
 import Company from '../model/company';
+import { HttpError } from '../errorHandling/custonError';
 
 const routerCompany = Router();
 
@@ -11,10 +12,18 @@ routerCompany.post(
   async (req: Request, res: Response) => {
     try {
       const company: Company = req.body;
-      const createCompany = await CompanyServices.createCompany(company);
+      const token = req.headers['authorization'];
+      const createCompany = await CompanyServices.createCompany(
+        company,
+        String(token)
+      );
       res.status(200).send(createCompany);
     } catch (error) {
-      res.status(400).json({ message: (error as Error).message });
+      if (error instanceof HttpError) {
+        res.status(error.code).json({ message: error.message });
+      } else {
+        res.status(400).json({ message: (error as Error).message });
+      }
     }
   }
 );
@@ -27,7 +36,11 @@ routerCompany.get(
       const createCompany = await CompanyServices.searchAll();
       res.status(200).send(createCompany);
     } catch (error) {
-      res.status(400).json({ message: (error as Error).message });
+      if (error instanceof HttpError) {
+        res.status(error.code).json({ message: error.message });
+      } else {
+        res.status(400).json({ message: (error as Error).message });
+      }
     }
   }
 );
@@ -43,7 +56,11 @@ routerCompany.get(
       );
       res.status(200).send(createCompany);
     } catch (error) {
-      res.status(400).json({ message: (error as Error).message });
+      if (error instanceof HttpError) {
+        res.status(error.code).json({ message: error.message });
+      } else {
+        res.status(400).json({ message: (error as Error).message });
+      }
     }
   }
 );
@@ -59,7 +76,11 @@ routerCompany.get(
       );
       res.status(200).send(createCompany);
     } catch (error) {
-      res.status(400).json({ message: (error as Error).message });
+      if (error instanceof HttpError) {
+        res.status(error.code).json({ message: error.message });
+      } else {
+        res.status(400).json({ message: (error as Error).message });
+      }
     }
   }
 );
@@ -70,10 +91,18 @@ routerCompany.put(
   async (req: Request, res: Response) => {
     try {
       const company: Company = req.body;
-      const createCompany = await CompanyServices.update(company);
+      const token = req.headers['authorization'];
+      const createCompany = await CompanyServices.update(
+        company,
+        String(token)
+      );
       res.status(200).send(createCompany);
     } catch (error) {
-      res.status(400).json({ message: (error as Error).message });
+      if (error instanceof HttpError) {
+        res.status(error.code).json({ message: error.message });
+      } else {
+        res.status(400).json({ message: (error as Error).message });
+      }
     }
   }
 );
@@ -84,12 +113,18 @@ routerCompany.delete(
   async (req: Request, res: Response) => {
     try {
       const idCompany = req.params;
+      const token = req.headers['authorization'];
       const createCompany = await CompanyServices.changeStatus(
-        Number(idCompany.id)
+        Number(idCompany.id),
+        String(token)
       );
       res.status(200).send(createCompany);
     } catch (error) {
-      res.status(400).json({ message: (error as Error).message });
+      if (error instanceof HttpError) {
+        res.status(error.code).json({ message: error.message });
+      } else {
+        res.status(400).json({ message: (error as Error).message });
+      }
     }
   }
 );

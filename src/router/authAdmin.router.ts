@@ -1,6 +1,7 @@
 import { Request, Response, Router } from 'express';
 import { LoginAdmin } from '../model/userAdmin';
 import loginAdminServices from '../services/loginAdminServices';
+import { HttpError } from '../errorHandling/custonError';
 
 const routerAuthAdmin = Router();
 
@@ -12,7 +13,11 @@ routerAuthAdmin.post(
       const token: string = await loginAdminServices.login(login);
       res.status(200).json(token);
     } catch (error) {
-      res.status(400).json({ message: (error as Error).message });
+      if (error instanceof HttpError) {
+        res.status(error.code).json({ message: error.message });
+      } else {
+        res.status(400).json({ message: (error as Error).message });
+      }
     }
   }
 );

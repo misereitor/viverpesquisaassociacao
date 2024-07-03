@@ -6,7 +6,7 @@ import AssCompanyAndCategory, {
 import { HttpError } from '../errorHandling/custonError';
 
 interface IAssociationCompanyAndCategoryRepository {
-  create(association: AssCompanyAndCategory): Promise<void>;
+  create(association: AssCompanyAndCategory): Promise<number>;
   searchAll(): Promise<AssCompanyAndCategoryInDB[]>;
   searchByIdCategory(idCategory: number): Promise<AssCompanyAndCategoryInDB[]>;
   searchByIdCompany(idCompany: number): Promise<AssCompanyAndCategoryInDB[]>;
@@ -19,17 +19,18 @@ interface IAssociationCompanyAndCategoryRepository {
 class AssociationCompanyAndCategoryRepository
   implements IAssociationCompanyAndCategoryRepository
 {
-  public async create(association: AssCompanyAndCategory): Promise<void> {
+  public async create(association: AssCompanyAndCategory): Promise<number> {
     const connection = await createConnection();
     try {
-      await connection.execute<ResultSetHeader>(
+      const [rows] = await connection.execute<ResultSetHeader>(
         `INSERT INTO 
-          category 
+          company_category 
         (category_id, company_id) 
           VALUES 
         (?, ?)`,
         [association.category_id, association.company_id]
       );
+      return rows.insertId;
     } catch (error) {
       console.error('Failed to fetch data:', error);
       throw new HttpError(500, String(error));
@@ -43,6 +44,7 @@ class AssociationCompanyAndCategoryRepository
     try {
       const [rows] = await connection.execute<RowDataPacket[]>(
         `SELECT
+          company_category.id,
           category.id AS category_id,
           category.name AS category_name,
           company.name AS company_name,
@@ -73,6 +75,7 @@ class AssociationCompanyAndCategoryRepository
     try {
       const [rows] = await connection.execute<RowDataPacket[]>(
         `SELECT
+          company_category.id,
           category.id AS category_id,
           category.name AS category_name,
           company.name AS company_name,
@@ -104,6 +107,7 @@ class AssociationCompanyAndCategoryRepository
     try {
       const [rows] = await connection.execute<RowDataPacket[]>(
         `SELECT
+          company_category.id,
           category.id AS category_id,
           category.name AS category_name,
           company.name AS company_name,
@@ -115,7 +119,7 @@ class AssociationCompanyAndCategoryRepository
           company ON company_category.company_id = company.id
         JOIN
           category ON company_category.category_id = category.id
-        WHERE company_category.company = ?
+        WHERE company_category.company_id = ?
         AND company.active = true AND category.active = true`,
         [idCompany]
       );

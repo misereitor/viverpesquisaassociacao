@@ -3,28 +3,42 @@ import AssCompanyAndCategory, {
   AssCompanyAndCategoryInDB,
   ResponseAssCompanyAndCategory
 } from '../model/AssociationCompanyAndCategory';
+import { LogsCompanyCategory } from '../model/logs';
 import associationCompanyAndCategoryRepository from '../repositiry/associationCompanyAndCategoryRepository';
+import categoryServices from './categoryServices';
+import companyServices from './companyServices';
+import logsServices from './logsServices';
 
 interface IAssociationCompanyAndCategoryServices {
-  create(association: AssCompanyAndCategory): Promise<void>;
+  create(association: AssCompanyAndCategory, token: string): Promise<void>;
   searchAll(): Promise<ResponseAssCompanyAndCategory[]>;
   searchByIdCategory(
     idCategory: number
   ): Promise<ResponseAssCompanyAndCategory>;
   searchByIdCompany(idCompany: number): Promise<ResponseAssCompanyAndCategory>;
-  delete(association: AssCompanyAndCategory): Promise<void>;
+  delete(association: AssCompanyAndCategory, token: string): Promise<void>;
 }
 
 class AssociationCompanyAndCategoryServices
   implements IAssociationCompanyAndCategoryServices
 {
-  public async create(association: AssCompanyAndCategory): Promise<void> {
+  public async create(
+    association: AssCompanyAndCategory,
+    token: string
+  ): Promise<void> {
     try {
-      const exist = await this.searchByIdCompanyAndCategory(association);
+      const exist = await this.searchByIdCompanyAndCategory(association, token);
       if (exist) throw new HttpError(403, 'Associação já existe');
-      await associationCompanyAndCategoryRepository.create(association);
+      const associate =
+        await associationCompanyAndCategoryRepository.create(association);
+      association.id = associate;
+      await this.createLogs(association, 'create', token);
     } catch (error) {
-      throw new HttpError(500, String(error));
+      if (error instanceof HttpError) {
+        throw error; // Preserve original HttpError
+      } else {
+        throw new HttpError(500, (error as Error).message); // Convert other errors to HttpError
+      }
     }
   }
 
@@ -33,7 +47,11 @@ class AssociationCompanyAndCategoryServices
       const result = await associationCompanyAndCategoryRepository.searchAll();
       return this.converterAssData(result);
     } catch (error) {
-      throw new HttpError(500, String(error));
+      if (error instanceof HttpError) {
+        throw error;
+      } else {
+        throw new HttpError(500, (error as Error).message);
+      }
     }
   }
 
@@ -47,7 +65,11 @@ class AssociationCompanyAndCategoryServices
         );
       return this.converterAssData(result)[0];
     } catch (error) {
-      throw new HttpError(500, String(error));
+      if (error instanceof HttpError) {
+        throw error;
+      } else {
+        throw new HttpError(500, (error as Error).message);
+      }
     }
   }
 
@@ -61,24 +83,39 @@ class AssociationCompanyAndCategoryServices
         );
       return this.converterAssData(result)[0];
     } catch (error) {
-      throw new HttpError(500, String(error));
+      if (error instanceof HttpError) {
+        throw error;
+      } else {
+        throw new HttpError(500, (error as Error).message);
+      }
     }
   }
 
-  public async delete(association: AssCompanyAndCategory): Promise<void> {
+  public async delete(
+    association: AssCompanyAndCategory,
+    token: string
+  ): Promise<void> {
     try {
-      const exist = await this.searchByIdCompanyAndCategory(association);
+      const exist = await this.searchByIdCompanyAndCategory(association, token);
       if (!exist) throw new HttpError(404, 'Associação não esiste');
       await associationCompanyAndCategoryRepository.delete(association);
+      await this.createLogs(association, 'delete', token);
     } catch (error) {
       throw new HttpError(500, String(Error));
     }
   }
 
   private async searchByIdCompanyAndCategory(
-    association: AssCompanyAndCategory
+    association: AssCompanyAndCategory,
+    token: string
   ): Promise<boolean> {
     try {
+      const company = await companyServices.searchById(association.company_id);
+      if (!company.associate) {
+        company.associate = true;
+        await companyServices.update(company, token);
+      }
+      await categoryServices.searchById(association.category_id);
       const search =
         await associationCompanyAndCategoryRepository.searchByIdCompanyAndCategory(
           association
@@ -100,6 +137,7 @@ class AssociationCompanyAndCategoryServices
     assCompanyAndCategoryInDB.forEach((item) => {
       if (!categoryMap.has(item.category_id)) {
         categoryMap.set(item.category_id, {
+          id: item.id,
           category: {
             id: item.category_id,
             name: item.category_name,
@@ -120,6 +158,30 @@ class AssociationCompanyAndCategoryServices
       }
     });
     return Array.from(categoryMap.values());
+  }
+
+  private async createLogs(
+    value: AssCompanyAndCategory,
+    action: string,
+    token: string
+  ) {
+    try {
+      const log: LogsCompanyCategory = {
+        id: 0,
+        category_id: value.category_id,
+        company_id: value.company_id,
+        action: action,
+        date: new Date(),
+        user_id: 0
+      };
+      await logsServices.createLogCompany_Category(log, token);
+    } catch (error) {
+      if (error instanceof HttpError) {
+        throw error;
+      } else {
+        throw new HttpError(500, (error as Error).message);
+      }
+    }
   }
 }
 

@@ -11,7 +11,7 @@ interface Decoded {
 }
 
 const adminRoutes = [
-  '/useradmin/createuseradmin',
+  '/useradmin/create',
   '/useradmin/searchall',
   '/useradmin/searchbyid/:id',
   '/useradmin/searchbyusername/:username',
@@ -29,7 +29,12 @@ const adminRoutes = [
   '/company/searchbyid/:id',
   '/company/searchbyname/:name',
   '/company/update',
-  '/company/delete/:id'
+  '/company/delete/:id',
+  '/associate/create',
+  '/associate/searchall',
+  '/associate/searchbyidcategory/:id',
+  '/associate/searchbyidcompany/:id',
+  '/associate/delete'
 ];
 
 const adminRoutesRegex = adminRoutes.map(

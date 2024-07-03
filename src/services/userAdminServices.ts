@@ -15,15 +15,23 @@ import {
 import { ZodError, ZodIssue } from 'zod';
 import { HttpError } from '../errorHandling/custonError';
 import { ChangeStatus } from '../model/changeStatus';
+import { LogsUserAdmin } from '../model/logs';
+import logsServices from './logsServices';
 
 interface IUserAdminService {
-  createUserAdmin(userAdmin: UserAdmin): Promise<UserAdminResponse>;
+  createUserAdmin(
+    userAdmin: UserAdmin,
+    token: string
+  ): Promise<UserAdminResponse>;
   searchAll(): Promise<UserAdminResponse[]>;
   searchById(idUserAdmin: number): Promise<UserAdminResponse>;
   searchByUserName(userName: string): Promise<UserAdminResponse>;
-  update(userAdmin: UserAdmin): Promise<UserAdminResponse>;
-  alterPassword(alterPassword: AlterPasswordRequest): Promise<void>;
-  changeStatus(idUserAdmin: number): Promise<void>;
+  update(userAdmin: UserAdmin, token: string): Promise<UserAdminResponse>;
+  alterPassword(
+    alterPassword: AlterPasswordRequest,
+    token: string
+  ): Promise<void>;
+  changeStatus(idUserAdmin: number, token: string): Promise<void>;
 }
 
 interface ValidUserUpdate {
@@ -37,7 +45,8 @@ interface ErrorsValidateUserUpdate {
 
 class UserAdminService implements IUserAdminService {
   public async createUserAdmin(
-    userAdmin: UserAdmin
+    userAdmin: UserAdmin,
+    token: string
   ): Promise<UserAdminResponse> {
     try {
       const userAdminExist = await userAdminRepository.searchByUserName(
@@ -56,13 +65,18 @@ class UserAdminService implements IUserAdminService {
       const idUserAdminInsert = await userAdminRepository.save(userAdmin);
 
       userAdmin.id = idUserAdminInsert;
+      await this.createLogs(userAdmin, userAdmin, 'create', token);
       return this.converterUserAdminForResponse(userAdmin);
     } catch (error) {
       if (error instanceof ZodError) {
         const errorMessages = error.errors.map((e) => e.message).join(', ');
         throw new HttpError(406, `Validation error: ${errorMessages}`);
       }
-      throw new HttpError(403, `${error}`);
+      if (error instanceof HttpError) {
+        throw error;
+      } else {
+        throw new HttpError(500, (error as Error).message);
+      }
     }
   }
 
@@ -71,7 +85,11 @@ class UserAdminService implements IUserAdminService {
       const searchUserAdmin = await userAdminRepository.searchAll();
       return this.converterAllUserAdminForResponse(searchUserAdmin);
     } catch (error) {
-      throw new HttpError(403, `${error}`);
+      if (error instanceof HttpError) {
+        throw error;
+      } else {
+        throw new HttpError(500, (error as Error).message);
+      }
     }
   }
 
@@ -86,7 +104,30 @@ class UserAdminService implements IUserAdminService {
       }
       return this.converterUserAdminForResponse(searchUserAdmin);
     } catch (error) {
-      throw new HttpError(403, `${error}`);
+      if (error instanceof HttpError) {
+        throw error;
+      } else {
+        throw new HttpError(500, (error as Error).message);
+      }
+    }
+  }
+
+  private async searchByIdForLog(idUserAdmin: number): Promise<UserAdmin> {
+    try {
+      if (!(idUserAdmin > 0)) {
+        throw new HttpError(404, 'Usuário não encontrado');
+      }
+      const searchUserAdmin = await userAdminRepository.searchById(idUserAdmin);
+      if (!searchUserAdmin) {
+        throw new HttpError(404, 'Usuário não encontrado');
+      }
+      return searchUserAdmin;
+    } catch (error) {
+      if (error instanceof HttpError) {
+        throw error;
+      } else {
+        throw new HttpError(500, (error as Error).message);
+      }
     }
   }
 
@@ -99,13 +140,20 @@ class UserAdminService implements IUserAdminService {
       }
       return this.converterUserAdminForResponse(searchUserAdmin);
     } catch (error) {
-      throw new HttpError(403, `${error}`);
+      if (error instanceof HttpError) {
+        throw error;
+      } else {
+        throw new HttpError(500, (error as Error).message);
+      }
     }
   }
 
-  public async update(userAdmin: UserAdmin): Promise<UserAdminResponse> {
+  public async update(
+    userAdmin: UserAdmin,
+    token: string
+  ): Promise<UserAdminResponse> {
     try {
-      await this.searchById(userAdmin.id);
+      const oldValue = await this.searchByIdForLog(userAdmin.id);
 
       const validateResult = this.validateAlterUserAdmin(userAdmin);
       if (!validateResult.success) {
@@ -115,18 +163,24 @@ class UserAdminService implements IUserAdminService {
         });
         throw new ZodError(zodIssues);
       }
-      const update = await userAdminRepository.update(userAdmin);
-      return this.converterUserAdminForResponse(update);
+      const newValue = await userAdminRepository.update(userAdmin);
+      await this.createLogs(oldValue, newValue, 'update', token);
+      return this.converterUserAdminForResponse(newValue);
     } catch (error) {
-      throw new HttpError(403, `${error}`);
+      if (error instanceof HttpError) {
+        throw error;
+      } else {
+        throw new HttpError(500, (error as Error).message);
+      }
     }
   }
 
   public async alterPassword(
-    alterPassword: AlterPasswordRequest
+    alterPassword: AlterPasswordRequest,
+    token: string
   ): Promise<void> {
     try {
-      await this.searchById(alterPassword.id);
+      const oldValue = await this.searchByIdForLog(alterPassword.id);
       const validateResult = schemaAlterPassword.safeParse(alterPassword);
       if (!validateResult.success) {
         throw new ZodError(validateResult.error.errors);
@@ -134,22 +188,34 @@ class UserAdminService implements IUserAdminService {
       alterPassword.password = await this.encryptPassword(
         alterPassword.password
       );
-      await userAdminRepository.alterPassword(alterPassword);
+      const newValue = await userAdminRepository.alterPassword(alterPassword);
+      await this.createLogs(oldValue, newValue, 'alterPassword', token);
     } catch (error) {
-      throw new HttpError(403, `${error}`);
+      if (error instanceof HttpError) {
+        throw error;
+      } else {
+        throw new HttpError(500, (error as Error).message);
+      }
     }
   }
 
-  public async changeStatus(idUserAdmin: number): Promise<void> {
+  public async changeStatus(idUserAdmin: number, token: string): Promise<void> {
     try {
-      const userAdmin = await this.searchById(idUserAdmin);
+      const oldValue = await this.searchByIdForLog(idUserAdmin);
       const changeStatusUserAdmin: ChangeStatus = {
         id: idUserAdmin,
-        active: !userAdmin.active
+        active: !oldValue.active
       };
-      await userAdminRepository.changeStatus(changeStatusUserAdmin);
+      const newValue = await userAdminRepository.changeStatus(
+        changeStatusUserAdmin
+      );
+      await this.createLogs(oldValue, newValue, 'changeStatus', token);
     } catch (error) {
-      throw new HttpError(403, `${error}`);
+      if (error instanceof HttpError) {
+        throw error;
+      } else {
+        throw new HttpError(500, (error as Error).message);
+      }
     }
   }
 
@@ -167,7 +233,8 @@ class UserAdminService implements IUserAdminService {
       name: userAdmin.name,
       email: userAdmin.email,
       role: userAdmin.role,
-      active: userAdmin.active
+      active: userAdmin.active,
+      last_login: userAdmin.last_login
     };
     return userAdminResponse;
   }
@@ -183,7 +250,8 @@ class UserAdminService implements IUserAdminService {
           name: user.name,
           email: user.email,
           role: user.role,
-          active: user.active
+          active: user.active,
+          last_login: user.last_login
         };
       }
     );
@@ -220,6 +288,32 @@ class UserAdminService implements IUserAdminService {
       validationResult.success = false;
     }
     return validationResult;
+  }
+
+  private async createLogs(
+    oldValue: UserAdmin,
+    newValue: UserAdmin,
+    action: string,
+    token: string
+  ) {
+    try {
+      const log: LogsUserAdmin = {
+        id: 0,
+        user_admin_id: newValue.id,
+        action: action,
+        old_value: oldValue,
+        new_value: newValue,
+        date: new Date(),
+        user_id: 0
+      };
+      await logsServices.createLogUserAdmin(log, token);
+    } catch (error) {
+      if (error instanceof HttpError) {
+        throw error;
+      } else {
+        throw new HttpError(500, (error as Error).message);
+      }
+    }
   }
 }
 

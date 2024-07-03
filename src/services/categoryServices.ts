@@ -1,19 +1,24 @@
 import { HttpError } from '../errorHandling/custonError';
 import Category from '../model/category';
 import { ChangeStatus } from '../model/changeStatus';
+import { LogsCategory } from '../model/logs';
 import CategoryRepository from '../repositiry/categoryRepository';
+import logsServices from './logsServices';
 
 interface ICategoryServices {
-  createCompany(category: Category): Promise<Category>;
+  createCompany(category: Category, token: string): Promise<Category>;
   searchAll(): Promise<Category[]>;
   searchById(idCategory: number): Promise<Category>;
   searchByName(name: string): Promise<Category>;
-  update(category: Category): Promise<Category>;
-  changeStatus(idCategory: number): Promise<void>;
+  update(category: Category, token: string): Promise<Category>;
+  changeStatus(idCategory: number, token: string): Promise<void>;
 }
 
 class CategoryServices implements ICategoryServices {
-  public async createCompany(category: Category): Promise<Category> {
+  public async createCompany(
+    category: Category,
+    token: string
+  ): Promise<Category> {
     try {
       const categoryExist = await CategoryRepository.searchByName(
         category.name
@@ -23,9 +28,14 @@ class CategoryServices implements ICategoryServices {
       }
       const newCategory = await CategoryRepository.save(category);
       category.id = newCategory;
+      await this.createLogs(category, category, 'create', token);
       return category;
     } catch (error) {
-      throw new HttpError(500, String(error));
+      if (error instanceof HttpError) {
+        throw error;
+      } else {
+        throw new HttpError(500, (error as Error).message);
+      }
     }
   }
 
@@ -34,7 +44,11 @@ class CategoryServices implements ICategoryServices {
       const allCategories = await CategoryRepository.searchAll();
       return allCategories;
     } catch (error) {
-      throw new HttpError(500, String(error));
+      if (error instanceof HttpError) {
+        throw error;
+      } else {
+        throw new HttpError(500, (error as Error).message);
+      }
     }
   }
 
@@ -46,7 +60,11 @@ class CategoryServices implements ICategoryServices {
       }
       return category;
     } catch (error) {
-      throw new HttpError(500, String(error));
+      if (error instanceof HttpError) {
+        throw error;
+      } else {
+        throw new HttpError(500, (error as Error).message);
+      }
     }
   }
 
@@ -58,30 +76,71 @@ class CategoryServices implements ICategoryServices {
       }
       return category;
     } catch (error) {
-      throw new HttpError(500, String(error));
+      if (error instanceof HttpError) {
+        throw error;
+      } else {
+        throw new HttpError(500, (error as Error).message);
+      }
     }
   }
 
-  public async update(category: Category): Promise<Category> {
+  public async update(category: Category, token: string): Promise<Category> {
     try {
-      await this.searchById(category.id);
-      const categoryUpdate = CategoryRepository.update(category);
+      const oldCategory = await this.searchById(category.id);
+      const categoryUpdate = await CategoryRepository.update(category);
+      await this.createLogs(oldCategory, categoryUpdate, 'update', token);
       return categoryUpdate;
     } catch (error) {
-      throw new HttpError(500, String(error));
+      if (error instanceof HttpError) {
+        throw error;
+      } else {
+        throw new HttpError(500, (error as Error).message);
+      }
     }
   }
 
-  public async changeStatus(idCategory: number): Promise<void> {
+  public async changeStatus(idCategory: number, token: string): Promise<void> {
     try {
-      const category = await this.searchById(idCategory);
+      const oldCategory = await this.searchById(idCategory);
       const changeStatusCategory: ChangeStatus = {
         id: idCategory,
-        active: !category.active
+        active: !oldCategory.active
       };
-      await CategoryRepository.changeStatus(changeStatusCategory);
+      const newCategory =
+        await CategoryRepository.changeStatus(changeStatusCategory);
+      await this.createLogs(oldCategory, newCategory, 'changeStatus', token);
     } catch (error) {
-      throw new HttpError(500, String(error));
+      if (error instanceof HttpError) {
+        throw error;
+      } else {
+        throw new HttpError(500, (error as Error).message);
+      }
+    }
+  }
+
+  private async createLogs(
+    oldValue: Category,
+    newValue: Category,
+    action: string,
+    token: string
+  ) {
+    try {
+      const log: LogsCategory = {
+        id: 0,
+        category_id: newValue.id,
+        action: action,
+        old_value: oldValue,
+        new_value: newValue,
+        date: new Date(),
+        user_id: 0
+      };
+      await logsServices.createLogCategory(log, token);
+    } catch (error) {
+      if (error instanceof HttpError) {
+        throw error;
+      } else {
+        throw new HttpError(500, (error as Error).message);
+      }
     }
   }
 }

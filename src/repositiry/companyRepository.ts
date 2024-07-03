@@ -11,7 +11,7 @@ interface ICompanyRepository {
   searchById(idCompany: number): Promise<Company>;
   searchByName(name: string): Promise<Company>;
   update(company: Company): Promise<Company>;
-  changeStatus(status: ChangeStatus): Promise<void>;
+  changeStatus(status: ChangeStatus): Promise<Company>;
 }
 
 class CompanyRepository implements ICompanyRepository {
@@ -108,13 +108,22 @@ class CompanyRepository implements ICompanyRepository {
     }
   }
 
-  public async changeStatus(status: ChangeStatus): Promise<void> {
+  public async changeStatus(status: ChangeStatus): Promise<Company> {
     const connection = await createConnection();
     try {
-      await connection.execute(`UPDATE company SET active ? WHERE id = ?`, [
-        status.active,
-        status.id
-      ]);
+      const [result] = await connection.execute<ResultSetHeader>(
+        `UPDATE company SET active ? WHERE id = ?`,
+        [status.active, status.id]
+      );
+      if (result.affectedRows === 0) {
+        throw new Error('No rows updated');
+      }
+
+      const [rows] = await connection.execute<RowDataPacket[]>(
+        `SELECT * FROM company WHERE id = (?)`,
+        [status.id]
+      );
+      return rows[0] as Company;
     } catch (error) {
       console.error('Failed to fetch data:', error);
       throw new HttpError(500, String(error));

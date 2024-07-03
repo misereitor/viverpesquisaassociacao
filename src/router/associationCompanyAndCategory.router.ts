@@ -1,23 +1,23 @@
 import { Request, Response, Router } from 'express';
 import authMiddlewareUserAdmin from '../middlewares/authMiddleware';
-import CategoryServices from '../services/categoryServices';
-import Category from '../model/category';
+import AssociationCompanyAndCategoryServices from '../services/AssociationCompanyAndCategoryServices';
+import AssCompanyAndCategory from '../model/AssociationCompanyAndCategory';
 import { HttpError } from '../errorHandling/custonError';
 
-const routerCategory = Router();
+const routerAssCategoryCompany = Router();
 
-routerCategory.post(
+routerAssCategoryCompany.post(
   '/create',
   authMiddlewareUserAdmin,
   async (req: Request, res: Response) => {
     try {
-      const category: Category = req.body;
+      const associate: AssCompanyAndCategory = req.body;
       const token = req.headers['authorization'];
-      const createCategory = await CategoryServices.createCompany(
-        category,
+      const create = await AssociationCompanyAndCategoryServices.create(
+        associate,
         String(token)
       );
-      res.status(200).send(createCategory);
+      res.status(200).send(create);
     } catch (error) {
       if (error instanceof HttpError) {
         res.status(error.code).json({ message: error.message });
@@ -28,13 +28,13 @@ routerCategory.post(
   }
 );
 
-routerCategory.get(
+routerAssCategoryCompany.get(
   '/searchall',
   authMiddlewareUserAdmin,
   async (req: Request, res: Response) => {
     try {
-      const createCategory = await CategoryServices.searchAll();
-      res.status(200).send(createCategory);
+      const searchAll = await AssociationCompanyAndCategoryServices.searchAll();
+      res.status(200).send(searchAll);
     } catch (error) {
       if (error instanceof HttpError) {
         res.status(error.code).json({ message: error.message });
@@ -45,16 +45,17 @@ routerCategory.get(
   }
 );
 
-routerCategory.get(
-  '/searchbyid/:id',
+routerAssCategoryCompany.get(
+  '/searchbyidcategory/:id',
   authMiddlewareUserAdmin,
   async (req: Request, res: Response) => {
     try {
       const idCategory = req.params;
-      const createCategory = await CategoryServices.searchById(
-        Number(idCategory.id)
-      );
-      res.status(200).send(createCategory);
+      const create =
+        await AssociationCompanyAndCategoryServices.searchByIdCategory(
+          Number(idCategory.id)
+        );
+      res.status(200).send(create);
     } catch (error) {
       if (error instanceof HttpError) {
         res.status(error.code).json({ message: error.message });
@@ -65,16 +66,17 @@ routerCategory.get(
   }
 );
 
-routerCategory.get(
-  '/searchbyname/:name',
+routerAssCategoryCompany.get(
+  '/searchbyidcompany/:id',
   authMiddlewareUserAdmin,
   async (req: Request, res: Response) => {
     try {
-      const nameCategory = req.params;
-      const createCategory = await CategoryServices.searchByName(
-        nameCategory.name
-      );
-      res.status(200).send(createCategory);
+      const idCompany = req.params;
+      const create =
+        await AssociationCompanyAndCategoryServices.searchByIdCompany(
+          Number(idCompany.id)
+        );
+      res.status(200).send(create);
     } catch (error) {
       if (error instanceof HttpError) {
         res.status(error.code).json({ message: error.message });
@@ -85,18 +87,18 @@ routerCategory.get(
   }
 );
 
-routerCategory.put(
-  '/update',
+routerAssCategoryCompany.delete(
+  '/delete',
   authMiddlewareUserAdmin,
   async (req: Request, res: Response) => {
     try {
+      const associate: AssCompanyAndCategory = req.body;
       const token = req.headers['authorization'];
-      const category: Category = req.body;
-      const createCategory = await CategoryServices.update(
-        category,
+      const create = await AssociationCompanyAndCategoryServices.delete(
+        associate,
         String(token)
       );
-      res.status(200).send(createCategory);
+      res.status(200).send(create);
     } catch (error) {
       if (error instanceof HttpError) {
         res.status(error.code).json({ message: error.message });
@@ -107,26 +109,4 @@ routerCategory.put(
   }
 );
 
-routerCategory.delete(
-  '/changestatus/:id',
-  authMiddlewareUserAdmin,
-  async (req: Request, res: Response) => {
-    try {
-      const token = req.headers['authorization'];
-      const idCategory = req.params;
-      const createCategory = await CategoryServices.changeStatus(
-        Number(idCategory.id),
-        String(token)
-      );
-      res.status(200).send(createCategory);
-    } catch (error) {
-      if (error instanceof HttpError) {
-        res.status(error.code).json({ message: error.message });
-      } else {
-        res.status(400).json({ message: (error as Error).message });
-      }
-    }
-  }
-);
-
-export { routerCategory };
+export { routerAssCategoryCompany };

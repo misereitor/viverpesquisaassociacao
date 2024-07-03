@@ -1,19 +1,24 @@
 import { HttpError } from '../errorHandling/custonError';
 import { ChangeStatus } from '../model/changeStatus';
 import Company from '../model/company';
+import { LogsCompany } from '../model/logs';
 import CompanyRepository from '../repositiry/companyRepository';
+import logsServices from './logsServices';
 
 interface ICompanyServices {
-  createCompany(company: Company): Promise<Company>;
+  createCompany(company: Company, token: string): Promise<Company>;
   searchAll(): Promise<Company[]>;
   searchById(idCompany: number): Promise<Company>;
   searchByName(name: string): Promise<Company>;
-  update(company: Company): Promise<Company>;
-  changeStatus(idCompany: number): Promise<void>;
+  update(company: Company, token: string): Promise<Company>;
+  changeStatus(idCompany: number, token: string): Promise<void>;
 }
 
 class CompanyServices implements ICompanyServices {
-  public async createCompany(company: Company): Promise<Company> {
+  public async createCompany(
+    company: Company,
+    token: string
+  ): Promise<Company> {
     try {
       const companyExist = await CompanyRepository.searchByName(company.name);
       if (companyExist) {
@@ -21,9 +26,14 @@ class CompanyServices implements ICompanyServices {
       }
       const newCompany = await CompanyRepository.save(company);
       company.id = newCompany;
+      await this.createLogs(company, company, 'create', token);
       return company;
     } catch (error) {
-      throw new HttpError(500, String(error));
+      if (error instanceof HttpError) {
+        throw error;
+      } else {
+        throw new HttpError(500, (error as Error).message);
+      }
     }
   }
 
@@ -32,7 +42,11 @@ class CompanyServices implements ICompanyServices {
       const allCategories = await CompanyRepository.searchAll();
       return allCategories;
     } catch (error) {
-      throw new HttpError(500, String(error));
+      if (error instanceof HttpError) {
+        throw error;
+      } else {
+        throw new HttpError(500, (error as Error).message);
+      }
     }
   }
 
@@ -44,7 +58,11 @@ class CompanyServices implements ICompanyServices {
       }
       return company;
     } catch (error) {
-      throw new HttpError(500, String(error));
+      if (error instanceof HttpError) {
+        throw error;
+      } else {
+        throw new HttpError(500, (error as Error).message);
+      }
     }
   }
 
@@ -56,30 +74,71 @@ class CompanyServices implements ICompanyServices {
       }
       return company;
     } catch (error) {
-      throw new HttpError(500, String(error));
+      if (error instanceof HttpError) {
+        throw error;
+      } else {
+        throw new HttpError(500, (error as Error).message);
+      }
     }
   }
 
-  public async update(company: Company): Promise<Company> {
+  public async update(company: Company, token: string): Promise<Company> {
     try {
-      await this.searchById(company.id);
-      const companyUpdate = CompanyRepository.update(company);
-      return companyUpdate;
+      const oldValue = await this.searchById(company.id);
+      const newValue = await CompanyRepository.update(company);
+      await this.createLogs(oldValue, newValue, 'update', token);
+      return newValue;
     } catch (error) {
-      throw new HttpError(500, String(error));
+      if (error instanceof HttpError) {
+        throw error;
+      } else {
+        throw new HttpError(500, (error as Error).message);
+      }
     }
   }
 
-  public async changeStatus(idCompany: number): Promise<void> {
+  public async changeStatus(idCompany: number, token: string): Promise<void> {
     try {
-      const company = await this.searchById(idCompany);
+      const oldValue = await this.searchById(idCompany);
       const changeStatusCategory: ChangeStatus = {
         id: idCompany,
-        active: !company.active
+        active: !oldValue.active
       };
-      await CompanyRepository.changeStatus(changeStatusCategory);
+      const newValue =
+        await CompanyRepository.changeStatus(changeStatusCategory);
+      await this.createLogs(oldValue, newValue, 'changeStatus', token);
     } catch (error) {
-      throw new HttpError(500, String(error));
+      if (error instanceof HttpError) {
+        throw error;
+      } else {
+        throw new HttpError(500, (error as Error).message);
+      }
+    }
+  }
+
+  private async createLogs(
+    oldValue: Company,
+    newValue: Company,
+    action: string,
+    token: string
+  ) {
+    try {
+      const log: LogsCompany = {
+        id: 0,
+        company_id: newValue.id,
+        action: action,
+        old_value: oldValue,
+        new_value: newValue,
+        date: new Date(),
+        user_id: 0
+      };
+      await logsServices.createLogCompany(log, token);
+    } catch (error) {
+      if (error instanceof HttpError) {
+        throw error;
+      } else {
+        throw new HttpError(500, (error as Error).message);
+      }
     }
   }
 }

@@ -6,6 +6,7 @@ export default interface UserAdmin {
   email: string;
   role: string;
   active: boolean;
+  last_login: Date | undefined;
 }
 
 export interface UserAdminResponse {
@@ -15,6 +16,7 @@ export interface UserAdminResponse {
   email: string;
   role: string;
   active: boolean;
+  last_login: Date | undefined;
 }
 
 export interface AlterPasswordRequest {

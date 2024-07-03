@@ -1,3 +1,4 @@
+import { HttpError } from '../errorHandling/custonError';
 import {
   LogsUserAdmin,
   LogsCompany,
@@ -36,91 +37,197 @@ class LogsServices implements ILogsServices {
     log: LogsUserAdmin,
     token: string
   ): Promise<void> {
-    const tokenDecode = this.getUserAdmin(token);
-    log.user_id = tokenDecode.id;
-    await logsRepository.createLogUserAdmin(log);
+    try {
+      const tokenDecode = this.getUserAdmin(token);
+      log.user_id = tokenDecode.id;
+      await logsRepository.createLogUserAdmin(log);
+    } catch (error) {
+      if (error instanceof HttpError) {
+        throw error;
+      } else {
+        throw new HttpError(500, (error as Error).message);
+      }
+    }
   }
 
   public async createLogCompany(
     log: LogsCompany,
     token: string
   ): Promise<void> {
-    const tokenDecode = this.getUserAdmin(token);
-    log.user_id = tokenDecode.id;
-    await logsRepository.createLogCompany(log);
+    try {
+      const tokenDecode = this.getUserAdmin(token);
+      log.user_id = tokenDecode.id;
+      await logsRepository.createLogCompany(log);
+    } catch (error) {
+      if (error instanceof HttpError) {
+        throw error;
+      } else {
+        throw new HttpError(500, (error as Error).message);
+      }
+    }
   }
 
   public async createLogCategory(
     log: LogsCategory,
     token: string
   ): Promise<void> {
-    const tokenDecode = this.getUserAdmin(token);
-    log.user_id = tokenDecode.id;
-    await logsRepository.createLogCategory(log);
+    try {
+      const tokenDecode = this.getUserAdmin(token);
+      log.user_id = tokenDecode.id;
+      await logsRepository.createLogCategory(log);
+    } catch (error) {
+      if (error instanceof HttpError) {
+        throw error;
+      } else {
+        throw new HttpError(500, (error as Error).message);
+      }
+    }
   }
 
   public async createLogCompany_Category(
     log: LogsCompanyCategory,
     token: string
   ): Promise<void> {
-    const tokenDecode = this.getUserAdmin(token);
-    log.user_id = tokenDecode.id;
-    await logsRepository.createLogCompany_Category(log);
+    try {
+      const tokenDecode = this.getUserAdmin(token);
+      log.user_id = tokenDecode.id;
+      await logsRepository.createLogCompany_Category(log);
+    } catch (error) {
+      if (error instanceof HttpError) {
+        throw error;
+      } else {
+        throw new HttpError(500, (error as Error).message);
+      }
+    }
   }
 
   public async searchAllLogUserAdmin(): Promise<LogsUserAdmin[]> {
-    const logs = logsRepository.searchAllLogUserAdmin();
-    return logs;
+    try {
+      const logs = await logsRepository.searchAllLogUserAdmin();
+      return logs;
+    } catch (error) {
+      if (error instanceof HttpError) {
+        throw error;
+      } else {
+        throw new HttpError(500, (error as Error).message);
+      }
+    }
   }
 
   public async searchAllLogCompany(): Promise<LogsCompany[]> {
-    const logs = logsRepository.searchAllLogCompany();
-    return logs;
+    try {
+      const logs = await logsRepository.searchAllLogCompany();
+      return logs;
+    } catch (error) {
+      if (error instanceof HttpError) {
+        throw error;
+      } else {
+        throw new HttpError(500, (error as Error).message);
+      }
+    }
   }
 
   public async searchAllLogCategory(): Promise<LogsCategory[]> {
-    const logs = logsRepository.searchAllLogCategory();
-    return logs;
+    try {
+      const logs = await logsRepository.searchAllLogCategory();
+      return logs;
+    } catch (error) {
+      if (error instanceof HttpError) {
+        throw error;
+      } else {
+        throw new HttpError(500, (error as Error).message);
+      }
+    }
   }
 
   public async searchAllLogCompany_Category(): Promise<LogsCompanyCategory[]> {
-    const logs = logsRepository.searchAllLogCompany_Category();
-    return logs;
+    try {
+      const logs = await logsRepository.searchAllLogCompany_Category();
+      return logs;
+    } catch (error) {
+      if (error instanceof HttpError) {
+        throw error;
+      } else {
+        throw new HttpError(500, (error as Error).message);
+      }
+    }
   }
 
   public async searchAllLogUserAdminByIdUserAdmin(
     id: number
   ): Promise<LogsUserAdmin[]> {
-    const logs = logsRepository.searchAllLogUserAdminByIdUserAdmin(id);
-    return logs;
+    try {
+      const logs = await logsRepository.searchAllLogUserAdminByIdUserAdmin(id);
+      return logs;
+    } catch (error) {
+      if (error instanceof HttpError) {
+        throw error;
+      } else {
+        throw new HttpError(500, (error as Error).message);
+      }
+    }
   }
 
   public async searchAllLogCompanyByIdCompany(
     id: number
   ): Promise<LogsCompany[]> {
-    const logs = logsRepository.searchAllLogCompanyByIdCompany(id);
-    return logs;
+    try {
+      const logs = await logsRepository.searchAllLogCompanyByIdCompany(id);
+      return logs;
+    } catch (error) {
+      if (error instanceof HttpError) {
+        throw error;
+      } else {
+        throw new HttpError(500, (error as Error).message);
+      }
+    }
   }
 
   public async searchAllLogCategoryByIdCategory(
     id: number
   ): Promise<LogsCategory[]> {
-    const logs = logsRepository.searchAllLogCategoryByIdCategory(id);
-    return logs;
+    try {
+      const logs = await logsRepository.searchAllLogCategoryByIdCategory(id);
+      return logs;
+    } catch (error) {
+      if (error instanceof HttpError) {
+        throw error;
+      } else {
+        throw new HttpError(500, (error as Error).message);
+      }
+    }
   }
 
   public async searchAllLogCompany_CategoryByIdCategory(
     id: number
   ): Promise<LogsCompanyCategory[]> {
-    const logs = logsRepository.searchAllLogCompany_CategoryByIdCategory(id);
-    return logs;
+    try {
+      const logs =
+        await logsRepository.searchAllLogCompany_CategoryByIdCategory(id);
+      return logs;
+    } catch (error) {
+      if (error instanceof HttpError) {
+        throw error;
+      } else {
+        throw new HttpError(500, (error as Error).message);
+      }
+    }
   }
 
   public async searchAllLogCompany_CategoryByIdCompany(
     id: number
   ): Promise<LogsCompanyCategory[]> {
-    const logs = logsRepository.searchAllLogCompany_CategoryByIdCompany(id);
-    return logs;
+    try {
+      const logs =
+        await logsRepository.searchAllLogCompany_CategoryByIdCompany(id);
+      return logs;
+    } catch (error) {
+      if (error instanceof HttpError) {
+        throw error;
+      } else {
+        throw new HttpError(500, (error as Error).message);
+      }
+    }
   }
 
   private getUserAdmin(token: string): TokenDecodeLog {
